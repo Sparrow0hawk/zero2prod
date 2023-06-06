@@ -23,7 +23,7 @@ version = "0.6"
 default-features = false 
 features = [ 
     "runtime-tokio-rustls",
-    "marocs",
+    "macros",
     "postgres",
     "uuid",
     "chrono",
