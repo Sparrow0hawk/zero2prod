@@ -55,53 +55,53 @@ jobs:
 
       - name: Run tests
         run: cargo test
-# `fmt` container job
-fmt:
-  name: Rustfmt
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-      with:
-        # Specific to dtolnay/rust-toolchain: Comma-separated string of additional components to install
-        components: rustfmt
-    - name: Enforce formatting
-      run: cargo fmt --check
+  # `fmt` container job
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # Specific to dtolnay/rust-toolchain: Comma-separated string of additional components to install
+          components: rustfmt
+      - name: Enforce formatting
+        run: cargo fmt --check
 
-# `clippy` container job
-clippy:
-  name: Clippy
-  runs-on: ubuntu-latest
-  services:
-    postgres:
-      image: postgres:14
-      env:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: password
-        POSTGRES_DB: postgres
-      ports:
-        - 5432:5432
-  steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-      with:
-        components: clippy
-    - uses: Swatinem/rust-cache@v2
-      with:
-        key: sqlx-${{ env.SQLX_VERSION }}
-    - name: Install sqlx-cli
-      run:
-        cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
-    - name: Install postgresql-client
-      run: sudo apt-get update && sudo apt-get install postgresql-client -y
-    - name: Migrate database
-      run: SKIP_DOCKER=true ./scripts/init_db.sh
-    - name: Linting
-      run: cargo clippy -- -D warnings
+  # `clippy` container job
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: sqlx-${{ env.SQLX_VERSION }}
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+            --version=${{ env.SQLX_VERSION }}
+            --features ${{ env.SQLX_FEATURES }}
+            --no-default-features
+            --locked
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install postgresql-client -y
+      - name: Migrate database
+        run: SKIP_DOCKER=true ./scripts/init_db.sh
+      - name: Linting
+        run: cargo clippy -- -D warnings
 
   # `coverage` container job
   coverage:
