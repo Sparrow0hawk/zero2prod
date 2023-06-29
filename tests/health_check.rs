@@ -1,4 +1,6 @@
+use sqlx::{Connection, PgConnection};
 use std::net::TcpListener;
+use zero2prod::configuration::get_configuration;
 
 // tokio::test equivalent to tokio::main
 // but for running tests
@@ -33,9 +35,17 @@ fn spawn_app() -> String {
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
+    // set up
     let app_address = spawn_app();
+    let config = get_configuration().expect("Failed to load configuration");
+    let connection_string = config.database.connection_string();
+
+    let mut connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Failed to connect to Postgres");
     let client = reqwest::Client::new();
 
+    // action
     let body = "name=Frodo%20Baggins&email=frodo.baggins@40gmail.com";
     let res = client
         .post(&format!("{}/subscriptions", &app_address))
@@ -45,7 +55,15 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         .await
         .expect("Failed to execute request");
 
-    assert_eq!(200, res.status().as_u16())
+    assert_eq!(200, res.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+        .fetch_one(&mut connection)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "frodo.baggins@40gmail.com");
+    assert_eq!(saved.name, "Frodo Baggins");
 }
 
 #[tokio::test]
